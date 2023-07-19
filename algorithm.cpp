@@ -877,8 +877,8 @@ void Algorithm::new_elements_values(int start_x, int start_y, int end_x, int end
         {
             while (element != new_elements_list->tail->next)
             {
-                //element->g = last_element->g + Algorithm::distance_between_points(last_element->x, last_element->y, element->x ,element->y);
-                element->g = Algorithm::distance_between_points(start_x, start_y, element->x ,element->y);
+                element->g = last_element->g + Algorithm::distance_between_points(last_element->x, last_element->y, element->x ,element->y);
+                //element->g = Algorithm::distance_between_points(start_x, start_y, element->x ,element->y);
                 element->h = Algorithm::distance_between_points(element->x, element->y, end_x, end_y);
                 element->f = element->g + element->h;
 
@@ -895,7 +895,29 @@ void Algorithm::new_elements_values(int start_x, int start_y, int end_x, int end
 }
 
 
-void Algorithm::path_elements_values(DoubleList::pathElement * element, int end_x, int end_y, DoubleList::list * new_elements_list, DoubleList::list * open_list)
+
+void Algorithm::new_element_value(int start_x, int start_y, int end_x, int end_y, DoubleList::pathElement * last_element, DoubleList::pathElement * element, DoubleList::list * closed_list)
+{
+    //qDebug() << "NADAJE NOWYM ELEMENTOM WARTOSCI";
+
+    if (closed_list->counter < 1)
+    {
+        element->g = Algorithm::distance_between_points(start_x, start_y, element->x ,element->y);
+        element->h = Algorithm::distance_between_points(element->x, element->y, end_x, end_y);
+        element->f = element->g + element->h;
+    }
+
+    else
+    {
+        element->g = last_element->g + Algorithm::distance_between_points(last_element->x, last_element->y, element->x ,element->y);
+        //element->g = Algorithm::distance_between_points(start_x, start_y, element->x ,element->y);
+        element->h = Algorithm::distance_between_points(element->x, element->y, end_x, end_y);
+        element->f = element->g + element->h;
+    }
+}
+
+
+void Algorithm::path_elements_values(DoubleList::pathElement * element, int start_x, int start_y, int end_x, int end_y, DoubleList::list * new_elements_list, DoubleList::list * open_list)
 {
     //qDebug() << "NADAJE NOWYM ELEMENTOM WARTOSCI";
 
@@ -903,21 +925,35 @@ void Algorithm::path_elements_values(DoubleList::pathElement * element, int end_
     {
         DoubleList::pathElement * _element = new_elements_list->head;
 
+        qDebug() << "MERGUJE LISTE: ";
+
+        qDebug() << "LISTA OTWARTA: ";
+        open_list->show_list(open_list->counter);
+
+        qDebug() << "NASTEPCY: ";
+        new_elements_list->show_list(new_elements_list->counter);
+
+        qDebug() << "NADAJE WARTOSCI I DODAJE ELEMENTY...";
+
         while (_element != new_elements_list->tail->next)
         {
+            //_element->g = Algorithm::distance_between_points(start_x, start_y, _element->x, _element->y);
             _element->g = element->g + Algorithm::distance_between_points(element->x, element->y, _element->x, _element->y);
             _element->h = Algorithm::distance_between_points(_element->x, _element->y, end_x, end_y);
             _element->f = _element->g + _element->h;
+
+            open_list->add_existing_element(_element);
 
             //qDebug() << _element->x << ", " << _element->y << ": h = " << _element->h <<": g = " << _element->g << ", f = " << _element->f;
 
             _element = _element->next;
         }
 
-        new_elements_list->merge_to_list(open_list);
+        qDebug() << "ZROBIONO, OTWARTA PO MERGU: ";
+        open_list->show_list(open_list->counter);
     }
-    else
-        delete new_elements_list;
+
+    delete new_elements_list;
 }
 
 
@@ -928,14 +964,11 @@ void Algorithm::next_element(DoubleList::list * open_list, DoubleList::list * cl
 
     //qDebug() << "WYBIERAM NAJLEPSZY ELEMENT";
 
-    DoubleList::pathElement * element = open_list->head, * best_element = open_list->head;
+    DoubleList::pathElement * element = open_list->head->next, * best_element = open_list->head;
 
+    int lowest_f = open_list->head->f, lowest_h = open_list->head->h;
 
-    int lowest_f = element->f, lowest_h = element->h;
-
-    element = element->next;
-
-    while (element->next != 0)
+    while (element != 0)
     {
         if (element->f < lowest_f)  //  SZUKA NAJMNIEJSZEGO F POPRZEZ JEGO INDEKS
         {
@@ -969,61 +1002,70 @@ void Algorithm::next_element(DoubleList::list * open_list, DoubleList::list * cl
 
     //qDebug() << best_in_open;
 
+
     open_list->remove_element(best_element);
+
 
     //qDebug() << "WYBRANO NAJLEPSZY ELEMENT";
 
 }
 
 
-DoubleList::pathElement * Algorithm::most_promising_element(DoubleList::list * open_list)
+void Algorithm::most_promising_element(DoubleList::list * open_list, DoubleList::list * path)
 {
-    DoubleList::pathElement * element = open_list->head, * _element = element;
+    DoubleList::pathElement * element = open_list->head;
+    element->show_element();
 
-    DoubleList::pathElement * best = new DoubleList::pathElement;
+    int least_f = open_list->head->f, least_h = open_list->head->h, _counter = 1;
 
-    int least_f = element->f, least_h = element->h, _counter = 1;
 
-    while (_counter < open_list->counter)
+    if (element != 0)
     {
-        _element = _element->next;
+        DoubleList::pathElement * _element = open_list->head->next;
+        if (_element != 0)
+            _element->show_element();
 
-        if (_element->f == least_f)
+        while (_element != 0)
         {
-            if (_element->h < least_h)
+            if (_element->f == least_f)
+            {
+                if (_element->h < least_h)
+                {
+                    element = _element;
+                    least_h = _element->h;
+                }
+            }
+            else if (_element->f < least_f)
             {
                 element = _element;
                 least_h = _element->h;
+                least_f = _element->f;
             }
-        }
-        else if (_element->f < least_f)
-        {
-            element = _element;
-            least_h = _element->h;
-            least_f = _element->f;
-        }
 
-        _counter += 1;
+            _counter += 1;
+            _element = _element->next;
+        }
     }
 
-    best = element;
-    open_list->unlink(element);
 
-    return best;
+    path->add_existing_element(element);
+
+
+
 }
 
 
 
-DoubleList::list * Algorithm::path_successors(DoubleList::pathElement * element, DoubleList::list * closed_list, DoubleList::list * path, DoubleList::list2d * list2d)
+void Algorithm::path_successors(int start_x, int start_y, int end_x, int end_y, DoubleList::pathElement * element, DoubleList::list * closed_list, DoubleList::list * open_list, DoubleList::list * path, DoubleList::list2d * list2d)
 {
     //qDebug() << "WYBIERAM NOWE ELEMENTY";
     DoubleList::list * new_elements_list = new DoubleList::list;
     DoubleList::pathElement * new_element;
 
     int base_x = element->x-1, base_y = element->y-1, counter = 1;
-    bool in_closed_list, in_path;
+    bool in_closed_list, in_open_list, in_path;
 
-    //qDebug() << "START";
+    qDebug() << "START";
 
     for (int i = -1; i < 2; i+= 1)             //  8 NASTĘPCÓW BADANEGO ELEMENTU
     {
@@ -1031,14 +1073,19 @@ DoubleList::list * Algorithm::path_successors(DoubleList::pathElement * element,
 
         //qDebug() << counter << ": " << new_element->x << ", " << new_element->y;
 
-        in_closed_list = closed_list->in_list(new_element);
-        in_path = path->in_list(new_element);
-        //qDebug() << in_closed_list << ", " << in_path;
+        new_element->show_element();
 
-        if (in_closed_list && in_path == false)
+        in_closed_list = closed_list->in_list(new_element);
+        in_open_list = open_list->in_list(new_element);
+        in_path = path->in_list(new_element);
+        qDebug() << in_closed_list << ", " << in_open_list << ", " << in_path;
+
+        if (in_closed_list == true && in_path == false)
         {
-            //qDebug() << "WYBRANO ELEMENT...";
-            new_elements_list->add_element(new_element->type, new_element->x, new_element->y);
+            qDebug() << "WYBRANO ELEMENT...";
+            Algorithm::new_element_value(start_x, start_y, end_x, end_y, element, new_element, path);
+            new_elements_list->add_existing_element(new_element);
+
         }
         else
             //qDebug() << "POMINIETO: " << counter;
@@ -1050,14 +1097,18 @@ DoubleList::list * Algorithm::path_successors(DoubleList::pathElement * element,
 
     //qDebug() << counter << ": " << new_element->x << ", " << new_element->y;
 
-    in_closed_list = closed_list->in_list(new_element);
-    in_path = path->in_list(new_element);
-    //qDebug() << in_closed_list << ", " << in_path;
+    new_element->show_element();
 
-    if (in_closed_list && in_path == false)
+    in_closed_list = closed_list->in_list(new_element);
+    in_open_list = open_list->in_list(new_element);
+    in_path = path->in_list(new_element);
+    qDebug() << in_closed_list << ", " << in_open_list << ", " << in_path;
+
+    if (in_closed_list == true && in_path == false)
     {
         //qDebug() << "WYBRANO ELEMENT...";
-        new_elements_list->add_element(new_element->type, new_element->x, new_element->y);
+        Algorithm::new_element_value(start_x, start_y, end_x, end_y, element, new_element, path);
+        new_elements_list->add_existing_element(new_element);
     }
     else
         //qDebug() << "POMINIETO: " << counter;
@@ -1066,17 +1117,21 @@ DoubleList::list * Algorithm::path_successors(DoubleList::pathElement * element,
 
     new_element = list2d->get_element(base_x, base_y+1);
 
+    new_element->show_element();
+
 
     //qDebug() << counter << ": " << new_element->x << ", " << new_element->y;
 
     in_closed_list = closed_list->in_list(new_element);
+    in_open_list = open_list->in_list(new_element);
     in_path = path->in_list(new_element);
-    //qDebug() << in_closed_list << ", " << in_path;
+    qDebug() << in_closed_list << ", " << in_open_list << ", " << in_path;
 
-    if (in_closed_list && in_path == false)
+    if (in_closed_list == true && in_path == false)
     {
         //qDebug() << "WYBRANO ELEMENT...";
-        new_elements_list->add_element(new_element->type, new_element->x, new_element->y);
+        Algorithm::new_element_value(start_x, start_y, end_x, end_y, element, new_element, path);
+        new_elements_list->add_existing_element(new_element);
     }
     else
         //qDebug() << "POMINIETO: " << counter;
@@ -1088,17 +1143,21 @@ DoubleList::list * Algorithm::path_successors(DoubleList::pathElement * element,
     {
         new_element = list2d->get_element(base_x+1, base_y+i);
 
+        new_element->show_element();
+
 
         //qDebug() << counter << ": " << new_element->x << ", " << new_element->y;
 
         in_closed_list = closed_list->in_list(new_element);
+        in_open_list = open_list->in_list(new_element);
         in_path = path->in_list(new_element);
-        //qDebug() << in_closed_list << ", " << in_path;
+        qDebug() << in_closed_list << ", " << in_open_list << ", " << in_path;
 
-        if (in_closed_list && in_path == false)
+        if (in_closed_list == true && in_path == false)
         {
             //qDebug() << "WYBRANO ELEMENT...";
-            new_elements_list->add_element(new_element->type, new_element->x, new_element->y);
+            Algorithm::new_element_value(start_x, start_y, end_x, end_y, element, new_element, path);
+            new_elements_list->add_existing_element(new_element);
         }
         else
             //qDebug() << "POMINIETO: " << counter;
@@ -1106,7 +1165,9 @@ DoubleList::list * Algorithm::path_successors(DoubleList::pathElement * element,
         counter += 1;
     }
 
-    return new_elements_list;
+    Algorithm::most_promising_element(new_elements_list, path);
+
+    delete new_elements_list;
 }
 
 
@@ -1165,7 +1226,7 @@ void Algorithm::next_path_element(DoubleList::list * open_list, DoubleList::list
 }
 
 
-void Algorithm::draw_path(DoubleList::list *path, QImage & img)
+void Algorithm::draw_path(DoubleList::list *path, QImage & img, int R, int G, int B)
 {
     DoubleList::pathElement * element = path->head;
 
@@ -1174,24 +1235,23 @@ void Algorithm::draw_path(DoubleList::list *path, QImage & img)
 
     else if (path->counter == 1)
     {
-        img.setPixel(element->x-1, element->y-1, qRgba(0,30,255,255));
+        img.setPixel(element->x-1, element->y-1, qRgba(R,G,B,255));
     }
 
     else
         while (element != path->tail->next)
         {
-            img.setPixel(element->x-1, element->y-1, qRgba(0,30,255,255));
+            img.setPixel(element->x-1, element->y-1, qRgba(R,G,B,255));
             element = element->next;
         }
 
 }
 
 
-void Algorithm::set_path(int start_x, int start_y, int end_x, int end_y, DoubleList::list *closed_list, DoubleList::list2d * list2d, QImage & img)
+DoubleList::list * Algorithm::set_path(int start_x, int start_y, int end_x, int end_y, DoubleList::list *closed_list, DoubleList::list2d * list2d, QImage & img, int R, int G, int B)
 {
     DoubleList::list * path = new DoubleList::list;
     DoubleList::list * path_open_list = new DoubleList::list;
-    DoubleList::pathElement * most_promising_element = new DoubleList::pathElement;
 
     int path_counter = 1;
 
@@ -1199,48 +1259,13 @@ void Algorithm::set_path(int start_x, int start_y, int end_x, int end_y, DoubleL
 
     qDebug() << "STARTUJE Z PATHEM...";
 
-    while(!(path->tail->x == end_x && path->tail->y == end_y))
+    while(path_counter < 3000 && !(path->tail->x == end_x && path->tail->y == end_y))
     {
-        if (path_open_list->counter > 1)
-        {
-            //qDebug() << "WYBIERAM NAJLEPSZY ELEMENT...";
-
-            //qDebug() << path_open_list->counter;
-            //path_open_list->show_list(path_open_list->counter);
-
-            most_promising_element = Algorithm::most_promising_element(path_open_list);
-
-            //qDebug() << "BEST: " << most_promising_element->x << ", " << most_promising_element->y;
-
-            path->add_existing_element(most_promising_element);
-            path->tail->f = most_promising_element->f;
-        }
-        else if (path_open_list->counter == 1)
-        {
-            //qDebug() << "WYBIERAM NAJLEPSZY ELEMENT...";
-
-            //qDebug() << path_open_list->counter;
-            //path_open_list->show_list(path_open_list->counter);
-
-            most_promising_element = path_open_list->head;
-
-            //Debug() << "BEST: " << most_promising_element->x << ", " << most_promising_element->y;
-
-            path->add_existing_element(most_promising_element);
-            path->tail->f = most_promising_element->f;
-        }
-        else
-        {
-            //qDebug() << "WYBIERAM OGON";
-            most_promising_element = path->tail;
-        }
+        qDebug() << path_open_list->counter;
 
         qDebug() << "ROBIE PATHA: " << path_counter;
-        qDebug() << path->tail->x << ", " << path->tail->y;
+        Algorithm::path_successors(start_x, start_y, end_x, end_y, path->tail, closed_list, path_open_list, path, list2d);
 
-
-        DoubleList::list * successors = Algorithm::path_successors(most_promising_element, closed_list, path, list2d);
-        Algorithm::path_elements_values(most_promising_element, end_x, end_y, successors, path_open_list);
         path_counter += 1;
     }
 
@@ -1248,6 +1273,137 @@ void Algorithm::set_path(int start_x, int start_y, int end_x, int end_y, DoubleL
 
     qDebug() << "PATH ZROBIONY";
 
-    Algorithm::draw_path(path, img);
+    Algorithm::draw_path(path, img, R, G, B);
+
+    return path;
+
+}
+
+
+DoubleList::list * Algorithm::nearby_elements(DoubleList::pathElement * element, DoubleList::list2d * list2d, DoubleList::pathElement * _element)
+{
+    DoubleList::list * nearby_elements = new DoubleList::list;
+    DoubleList::pathElement * new_element;
+
+    int base_x = element->x-1, base_y = element->y-1;
+
+    for (int i = -1; i < 2; i+= 1)
+    {
+        new_element = list2d->get_element(base_x-1, base_y+i);
+        nearby_elements->add_element(new_element->type, new_element->x, new_element->y);
+        nearby_elements->tail->g = Algorithm::distance_between_points(element->x, element->y, nearby_elements->tail->x, nearby_elements->tail->y);
+        nearby_elements->tail->h = Algorithm::distance_between_points(_element->x, _element->y, nearby_elements->tail->x, nearby_elements->tail->y);
+        nearby_elements->tail->f = nearby_elements->tail->g + nearby_elements->tail->h;
+    }
+
+    new_element = list2d->get_element(base_x, base_y-1);
+    nearby_elements->add_element(new_element->type, new_element->x, new_element->y);
+    nearby_elements->tail->g = Algorithm::distance_between_points(element->x, element->y, nearby_elements->tail->x, nearby_elements->tail->y);
+    nearby_elements->tail->h = Algorithm::distance_between_points(_element->x, _element->y, nearby_elements->tail->x, nearby_elements->tail->y);
+    nearby_elements->tail->f = nearby_elements->tail->g + nearby_elements->tail->h;
+
+    new_element = list2d->get_element(base_x, base_y+1);
+    nearby_elements->add_element(new_element->type, new_element->x, new_element->y);
+    nearby_elements->tail->g = Algorithm::distance_between_points(element->x, element->y, nearby_elements->tail->x, nearby_elements->tail->y);
+    nearby_elements->tail->h = Algorithm::distance_between_points(_element->x, _element->y, nearby_elements->tail->x, nearby_elements->tail->y);
+    nearby_elements->tail->f = nearby_elements->tail->g + nearby_elements->tail->h;
+
+
+    for (int i = -1; i < 2; i+= 1)
+    {
+        new_element = list2d->get_element(base_x+1, base_y+i);
+        nearby_elements->add_element(new_element->type, new_element->x, new_element->y);
+        nearby_elements->tail->g = Algorithm::distance_between_points(element->x, element->y, nearby_elements->tail->x, nearby_elements->tail->y);
+        nearby_elements->tail->h = Algorithm::distance_between_points(_element->x, _element->y, nearby_elements->tail->x, nearby_elements->tail->y);
+        nearby_elements->tail->f = nearby_elements->tail->g + nearby_elements->tail->h;
+    }
+
+    return nearby_elements;
+}
+
+
+
+DoubleList::pathElement * Algorithm::best_from_nearby(DoubleList::pathElement * element, DoubleList::list2d * list2d, DoubleList::pathElement * _element)
+{
+    DoubleList::list * elements = Algorithm::nearby_elements(element, list2d, _element);
+    DoubleList::pathElement * __element = elements->head, * ___element = __element->next, * best_element = __element;
+
+    int lowest_f = __element->f, lowest_h = __element->h;
+
+    while (___element != 0)
+    {
+        if (___element->f < lowest_f)
+        {
+            best_element = ___element;
+            lowest_f = ___element->f;
+            lowest_h = ___element->h;
+        }
+        else if (___element->f == lowest_f)
+        {
+            if (___element->h < lowest_h)
+            {
+                best_element = ___element;
+                lowest_h = ___element->h;
+            }
+        }
+
+        ___element = ___element->next;
+    }
+
+    return best_element;
+}
+
+
+
+
+DoubleList::list * Algorithm::shortest_path_possible(DoubleList::pathElement *element, DoubleList::list2d * list2d, DoubleList::pathElement *_element)
+{
+    DoubleList::list * path_list = new DoubleList::list;
+
+    qDebug() << "ROZPOCZYNAM SZORTA";
+
+    bool unpassable = false;
+
+    int ten_counter = 1;
+
+    path_list->add_existing_element(element);
+    element->show_element();
+    _element->show_element();
+
+    while (!(path_list->tail->x == _element->x && path_list->tail->y == _element->y))
+    {
+        path_list->add_existing_element(Algorithm::best_from_nearby(path_list->tail, list2d, _element));
+        if (path_list->tail->type == 1)
+            unpassable = true;
+
+        qDebug() << ten_counter;
+
+        ten_counter += 1;
+    }
+
+    qDebug() << "SKONCZYLEM SZORTA: " << unpassable;
+
+    if (unpassable)
+        return 0;
+    else
+        return path_list;
+}
+
+
+
+
+void Algorithm::path_filtration(DoubleList::list *path, QImage &img)
+{
+    DoubleList::list * cleaner_path = new DoubleList::list, * corrective_path = new DoubleList::list,
+            * _corrective_path = new DoubleList::list;
+    cleaner_path->add_existing_element(path->head);
+
+    DoubleList::pathElement * _element = path->head->next;
+
+    while (_element != path->tail)
+    {
+
+    }
+
 
 }

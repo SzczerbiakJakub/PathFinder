@@ -7,7 +7,16 @@ DoubleList::pathElement::pathElement()
     g = 0;
     h = 0;
     f = 0;
+    type = NULL;
+    x = NULL;
+    y = NULL;
 }
+
+void DoubleList::pathElement::show_element()
+{
+    qDebug() << "type: " << this->type << ", x: " << this->x << ", y: " << this->y << ", f: " << this->f << ", g: " << this->g << ", h: " << this->h;
+}
+
 
 DoubleList::list::list()
 {
@@ -63,13 +72,16 @@ void DoubleList::list::add_existing_element(DoubleList::pathElement *element)
     newElement->type = element->type;
     newElement->x = element->x;
     newElement->y = element->y;
+    newElement->f = element->f;
+    newElement->g = element->g;
+    newElement->h = element->h;
 
     if (head == 0)
     {
         head = newElement;
         head->next = 0;
         tail = head;
-        counter ++;
+        this->counter ++;
     }
     else
     {
@@ -83,7 +95,7 @@ void DoubleList::list::add_existing_element(DoubleList::pathElement *element)
         tail = newElement;
         temp->next = tail;
         tail->prev = temp;
-        counter ++;
+        this->counter ++;
     }
 }
 
@@ -137,7 +149,7 @@ void DoubleList::list::show_list(int howMany)
     while (howFar > 0)
     {
         //qDebug() << element->x << "  " << element->y;
-        qDebug() << element->type << "  x: " << element->x << "  y: " << element->y << "  f: " << element->f << "  type: " << element->type;
+        qDebug() << "x: " << element->x << "  y: " << element->y << "  f: " << element->f << "  g: " << element->g << "  h: " << element->h << "  type: " << element->type;
         element = element->next;
         howFar --;
     }
@@ -194,23 +206,35 @@ void DoubleList::list::remove_element(pathElement * element)
 
     if (_element == this->head)
     {
-        this->head = _element->next;
-        _element->next->prev = 0;
-    }
-    else if (_element == this->tail)
-    {
-        this->tail = _element->prev;
-        _element->prev->next = 0;
+        if (this->counter > 1)
+        {
+            this->head = _element->next;
+            _element->next->prev = 0;
+        }
+        else
+        {
+            qDebug() << "CHCE USUNAC ELEMENT...";
+            qDebug() << "USUNALEM";
+        }
     }
     else
     {
-        _element->next->prev = _element->prev;
-        _element->prev->next = _element->next;
+        if (_element == this->tail)
+        {
+            this->tail = _element->prev;
+            _element->prev->next = 0;
+        }
+        else
+        {
+            _element->next->prev = _element->prev;
+            _element->prev->next = _element->next;
+        }
     }
+
+    delete _element;
 
     counter -= 1;
 
-    delete _element;
 }
 
 
@@ -225,8 +249,13 @@ void DoubleList::list::unlink(pathElement * element)
 
     if (_element == this->head)
     {
-        this->head = _element->next;
-        _element->next->prev = 0;
+        if (this->counter == 1)
+            this->head = 0;
+        else
+        {
+            this->head = _element->next;
+            _element->next->prev = 0;
+        }
     }
     else if (_element == this->tail)
     {
@@ -246,39 +275,68 @@ void DoubleList::list::unlink(pathElement * element)
 
 bool DoubleList::list::in_list(DoubleList::pathElement *element)
 {
-    DoubleList::pathElement * _element = this->head;
+    if (this->counter == 0)
+        return false;
 
-    if (_element == 0)
+    else
     {
-        //qDebug() << "BRAK ELEMENTOW W LISCIE";
+        DoubleList::pathElement * _element = this->head;
+
+        if (_element == 0)
+        {
+            //qDebug() << "BRAK ELEMENTOW W LISCIE";
+            return false;
+        }
+
+        //this->show_list(this->counter);
+
+        //qDebug() << "PROCES POSZEDL DALEJ";
+
+        //qDebug() << "SPRAWDZA...";
+
+        int _counter = 1;
+
+        while (_element != this->tail->next)
+        {
+            //qDebug() << "PRZED: " << _counter;
+
+            if (_element->x == element->x && _element->y == element->y)
+            {
+                //qDebug() << element->x << "," << element->y << " są te same co " << _element->x << "," << _element->y;
+                return true;
+            }
+
+            _element = _element->next;
+            _counter += 1;
+            //qDebug() << "PO: " << _counter;
+        }
+
+        //qDebug() << element->x << "," << element->y << " nie są takie same jak " << this->tail->x << "," << this->tail->y;
         return false;
     }
 
-    //this->show_list(this->counter);
+}
 
-    //qDebug() << "PROCES POSZEDL DALEJ";
 
-    //qDebug() << "SPRAWDZA...";
+int DoubleList::list::how_many(DoubleList::pathElement *element)
+{
+    int same_elements_counter = 0;
 
-    int _counter = 1;
-
-    while (_element != this->tail->next)
+    if (this->counter > 0)
     {
-        //qDebug() << "PRZED: " << _counter;
-
-        if (_element->x == element->x && _element->y == element->y)
+        DoubleList::pathElement * _element = this->head;
+        while (_element != 0)
         {
-            //qDebug() << element->x << "," << element->y << " są te same co " << _element->x << "," << _element->y;
-            return true;
-        }
+            if (_element == element)
+            {
+                same_elements_counter += 1;
+            }
 
-        _element = _element->next;
-        _counter += 1;
-        //qDebug() << "PO: " << _counter;
+            _element = _element->next;
+        }
     }
 
-    //qDebug() << element->x << "," << element->y << " nie są takie same jak " << this->tail->x << "," << this->tail->y;
-    return false;
+    return same_elements_counter;
 }
 
 
@@ -295,12 +353,42 @@ void DoubleList::list::merge_to_list(list * main_list)
         main_list->tail->f = element->f;
         main_list->tail->g = element->g;
         main_list->tail->h = element->h;
+
         element = element->next;
     }
 
     delete this;
 }
 
+
+void DoubleList::list::merge_to_list2(list * main_list)
+{
+    qDebug() << "MERGING...";
+    DoubleList::pathElement * element = this->head;
+
+    if (element == 0)
+        return;
+
+    while (element != this->tail->next)
+    {
+        main_list->add_element(element->type, element->x, element->y);
+        main_list->tail->f = element->f;
+        main_list->tail->g = element->g;
+        main_list->tail->h = element->h;
+
+        main_list->tail->show_element();
+
+        element = element->next;
+    }
+
+    qDebug() << "END OF MERGING, LIST:";
+
+    main_list->show_list(main_list->counter);
+
+    qDebug() << "END OF FUNCTION";
+
+    delete this;
+}
 
 
 

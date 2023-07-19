@@ -455,15 +455,20 @@ void MainWindow::on_new_algorithm_clicked()
 
     closed_list->add_element(0, get_point_a_X(), get_point_a_Y());
 
-    int counter = 1, counter_threshold = 176;
+    int counter = 1, counter_threshold = 5500;
 
-    while (/*counter <= counter_threshold && */!(closed_list->tail->x == get_point_b_X() && closed_list->tail->y == get_point_b_Y()))
+    bool no_path_available = false;
+
+    while (/*counter <= counter_threshold &&*/ !(closed_list->tail->x == get_point_b_X() && closed_list->tail->y == get_point_b_Y()) && !(counter > 2 && open_list->counter < 1))
     {
         //qDebug() << "KROK NR " << counter;
 
         DoubleList::list * new_elements_list = algorithm->new_elements(closed_list->tail, lista2d, open_list, closed_list, pathImage);
+        //qDebug() << "NOWE ELEMENTY POSZLY";
         algorithm->new_elements_values(get_point_a_X(), get_point_a_Y(), get_point_b_X(), get_point_b_Y(), closed_list->tail, new_elements_list, closed_list, open_list);
+        //qDebug() << "ICH WARTOSCI TEZ";
         algorithm->next_element(open_list, closed_list, pathImage);
+        //qDebug() << "WYBRANO NOWY ELEMENT - POSZLO";
 
         pm = Algorithm::create_path(pathImage);
 
@@ -484,15 +489,67 @@ void MainWindow::on_new_algorithm_clicked()
     qDebug() << closed_list->counter << ",      " << open_list->counter;
 
 
-    algorithm->set_path(get_point_b_X(), get_point_b_Y(), get_point_a_X(), get_point_a_Y(), closed_list, lista2d, pathImage);
+    if (!(closed_list->tail->x == get_point_b_X() && closed_list->tail->y == get_point_b_Y()))
+        no_path_available = true;
 
-    pm = Algorithm::create_path(pathImage);
+    if (no_path_available)
+        qDebug() << "NIE MA SCIEZKI";
+    else
+    {
+        DoubleList::list * path_1 = algorithm->set_path(get_point_b_X(), get_point_b_Y(), get_point_a_X(), get_point_a_Y(), closed_list, lista2d, pathImage, 0, 30, 255);
 
-    //qDebug() << "STAWIAM PIXMAPE...";
-    ui->path->setPixmap(pm);
+        pm = Algorithm::create_path(pathImage);
 
-    qDebug() << "GOTOWA SCIEZKA: ";
-    //closed_list->show_list(closed_list->counter);
+        //qDebug() << "STAWIAM PIXMAPE...";
+        ui->path->setPixmap(pm);
+
+        qDebug() << "GOTOWA SCIEZKA: ";
+        //closed_list->show_list(closed_list->counter);
+
+        /*
+        DoubleList::list * path_2 = algorithm->set_path(get_point_a_X(), get_point_a_Y(), get_point_b_X(), get_point_b_Y(), path_1, lista2d, pathImage, 255, 30, 255);
+
+        pm = Algorithm::create_path(pathImage);
+
+        //qDebug() << "STAWIAM PIXMAPE...";
+        ui->path->setPixmap(pm);
+
+
+        qDebug() << "GOTOWA SCIEZKA 2: ";
+        */
+
+        qDebug() << "FILTROWANIE...";
+        DoubleList::pathElement * starting_element = path_1->head, * ending_element = path_1->tail;
+        DoubleList::list * filtrated_path = new DoubleList::list, * path_2;
+
+        do
+        {
+            path_2 = algorithm->shortest_path_possible(starting_element, lista2d, ending_element);
+
+            if (path_2 != 0)
+            {
+                starting_element = ending_element;
+                ending_element = path_1->tail;
+                algorithm->draw_path(path_2, pathImage, 255, 255, 0);
+                pm = Algorithm::create_path(pathImage);
+                ui->path->setPixmap(pm);
+
+                if (!(path_2->tail->x == path_1->tail->x && path_2->tail->y == path_1->tail->y))
+                    path_2 = 0;
+
+            }
+            else
+            {
+                ending_element = ending_element->prev;
+            }
+        }
+        while (path_2 == 0);
+
+
+         qDebug() << "PRZEFILTROWANO";
+
+    }
+
 
 
     delete algorithm;

@@ -48,6 +48,9 @@ public:
 
         ///     Wskaźnik na poprzedni element.
         * prev;
+
+
+        void show_element();
     };
 
     ///     Struktura danych przedstawiająca listę dwukierunkową.
@@ -95,7 +98,11 @@ public:
 
         bool in_list(DoubleList::pathElement * element);
 
+        int how_many(DoubleList::pathElement * element);
+
         void merge_to_list(list * main_list);
+
+        void merge_to_list2(list * main_list);
 
         list
         ///     Wskazuje na następną w kolejności listę.

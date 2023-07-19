@@ -96,19 +96,29 @@ public:
 
     void new_elements_values(int start_x, int start_y, int end_x, int end_y, DoubleList::pathElement * last_element, DoubleList::list * elements_list, DoubleList::list * closed_list, DoubleList::list * open_list);
 
+    static void new_element_value(int start_x, int start_y, int end_x, int end_y, DoubleList::pathElement * last_element, DoubleList::pathElement * element, DoubleList::list * closed_list);
+
     void next_element(DoubleList::list * open_list, DoubleList::list * closed_list, QImage & img);
 
-    static DoubleList::pathElement * most_promising_element(DoubleList::list * open_list);
+    static void most_promising_element(DoubleList::list * open_list, DoubleList::list * path);
 
-    DoubleList::list * path_successors(DoubleList::pathElement * element, DoubleList::list * closed_list, DoubleList::list * path, DoubleList::list2d * list2d);
+    void path_successors(int start_x, int start_y, int end_x, int end_y, DoubleList::pathElement * element, DoubleList::list * closed_list, DoubleList::list * open_list, DoubleList::list * path, DoubleList::list2d * list2d);
 
     void next_path_element(DoubleList::list * open_list, DoubleList::list * closed_list, QImage & img);
 
-    void path_elements_values(DoubleList::pathElement * element, int end_x, int end_y, DoubleList::list * elements_list, DoubleList::list * open_list);
+    void path_elements_values(DoubleList::pathElement * element, int start_x, int start_y, int end_x, int end_y, DoubleList::list * elements_list, DoubleList::list * open_list);
 
-    void set_path(int start_x, int start_y, int end_x, int end_y, DoubleList::list * closed_list, DoubleList::list2d * list2d, QImage &img);
+    DoubleList::list * set_path(int start_x, int start_y, int end_x, int end_y, DoubleList::list * closed_list, DoubleList::list2d * list2d, QImage &img, int R, int G, int B);
 
-    void draw_path(DoubleList::list * path, QImage & img);
+    void draw_path(DoubleList::list * path, QImage & img, int R, int G, int B);
+
+    DoubleList::list * nearby_elements(DoubleList::pathElement * element, DoubleList::list2d * list2d, DoubleList::pathElement * _element);
+
+    DoubleList::pathElement * best_from_nearby(DoubleList::pathElement * element, DoubleList::list2d * list2d, DoubleList::pathElement * _element);
+
+    DoubleList::list * shortest_path_possible(DoubleList::pathElement * element, DoubleList::list2d * list2d, DoubleList::pathElement * _element);
+
+    void path_filtration(DoubleList::list * path, QImage & img);
 
 
     QImage pathImage;
