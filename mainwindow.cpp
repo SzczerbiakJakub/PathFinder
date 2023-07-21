@@ -496,12 +496,18 @@ void MainWindow::on_new_algorithm_clicked()
         qDebug() << "NIE MA SCIEZKI";
     else
     {
+
+        // DO POPRAWY
+        /*
+
         DoubleList::list * path_1 = algorithm->set_path(get_point_b_X(), get_point_b_Y(), get_point_a_X(), get_point_a_Y(), closed_list, lista2d, pathImage, 0, 30, 255);
 
         pm = Algorithm::create_path(pathImage);
 
         //qDebug() << "STAWIAM PIXMAPE...";
         ui->path->setPixmap(pm);
+
+        */
 
         qDebug() << "GOTOWA SCIEZKA: ";
         //closed_list->show_list(closed_list->counter);
@@ -518,6 +524,9 @@ void MainWindow::on_new_algorithm_clicked()
         qDebug() << "GOTOWA SCIEZKA 2: ";
         */
 
+        //  BEZ FILTROWANIA POKI CO
+
+        /*
         qDebug() << "FILTROWANIE...";
         DoubleList::pathElement * starting_element = path_1->head, * ending_element = path_1->tail;
         DoubleList::list * filtrated_path = new DoubleList::list, * path_2;
@@ -548,8 +557,9 @@ void MainWindow::on_new_algorithm_clicked()
 
          qDebug() << "PRZEFILTROWANO";
 
-    }
+    */
 
+    }
 
 
     delete algorithm;
